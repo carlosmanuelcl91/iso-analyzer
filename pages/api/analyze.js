@@ -10,6 +10,36 @@ export default async function handler(req, res) {
   }
 
   try {
+    const isPdf = type === "application/pdf";
+    
+    const messageContent = isPdf ? [
+      {
+        type: "document",
+        source: {
+          type: "base64",
+          media_type: "application/pdf",
+          data: image,
+        },
+      },
+      {
+        type: "text",
+        text: "Analiza este isométrico y devuelve el JSON con todos los datos.",
+      },
+    ] : [
+      {
+        type: "image",
+        source: {
+          type: "base64",
+          media_type: "image/jpeg",
+          data: image,
+        },
+      },
+      {
+        type: "text",
+        text: "Analiza este isométrico y devuelve el JSON con todos los datos.",
+      },
+    ];
+
     const response = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
       headers: {
@@ -53,20 +83,7 @@ export default async function handler(req, res) {
         messages: [
           {
             role: "user",
-            content: [
-              {
-                type: "image",
-                source: {
-                  type: "base64",
-                  media_type: type,
-                  data: image,
-                },
-              },
-              {
-                type: "text",
-                text: "Analiza este isométrico y devuelve el JSON con todos los datos.",
-              },
-            ],
+            content: messageContent,
           },
         ],
       }),
