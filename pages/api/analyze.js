@@ -73,10 +73,28 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+
+    if (data.error) {
+      return res.status(500).json({ error: data.error.message || "Error de API" });
+    }
+
     const text = data.content?.map((b) => b.text || "").join("") || "";
+
+    if (!text) {
+      return res.status(500).json({ error: "La IA no devolvió respuesta" });
+    }
+
     const clean = text.replace(/```json|```/g, "").trim();
-    const parsed = JSON.parse(clean);
+
+    let parsed;
+    try {
+      parsed = JSON.parse(clean);
+    } catch(e) {
+      return res.status(500).json({ error: "Error procesando respuesta: " + clean.substring(0, 200) });
+    }
+
     return res.status(200).json(parsed);
+
   } catch (err) {
     return res.status(500).json({ error: "Error al analizar la imagen: " + err.message });
   }
