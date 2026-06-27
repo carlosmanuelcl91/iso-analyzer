@@ -11,22 +11,26 @@ export default function IsoAnalyzer() {
 
   const handleFile = (file) => {
     if (!file || !file.type.startsWith("image/")) return;
-    setImage(URL.createObjectURL(file));
     setResult(null);
     setError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const dataUrl = e.target.result;
-      const base64 = dataUrl.split(",")[1];
-      let realType = "image/jpeg";
-      if (dataUrl.startsWith("data:image/png")) realType = "image/png";
-      if (dataUrl.startsWith("data:image/webp")) realType = "image/webp";
-      if (dataUrl.startsWith("data:image/gif")) realType = "image/gif";
-      setImageData({ base64, type: realType });
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0);
+        const jpeg = canvas.toDataURL("image/jpeg", 0.92);
+        setImage(jpeg);
+        setImageData({ base64: jpeg.split(",")[1], type: "image/jpeg" });
+      };
+      img.src = e.target.result;
     };
     reader.readAsDataURL(file);
   };
-
+  
   const analyze = async () => {
     if (!imageData) return;
     setLoading(true);
