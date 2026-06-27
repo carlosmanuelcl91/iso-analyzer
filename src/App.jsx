@@ -179,7 +179,8 @@ export default function IsoAnalyzer() {
       result.construccion.alertas.forEach(a => rows.push(`⚠️,${a}`));
     }
 
-    const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const BOM = "\uFEFF";
+    const blob = new Blob([BOM + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
