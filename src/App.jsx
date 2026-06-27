@@ -17,10 +17,11 @@ export default function IsoAnalyzer() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target.result.split(",")[1];
-      setImageData({ base64, type: "image/jpeg" });
+      const mimeMatch = e.target.result.match(/data:([^;]+);/);
+      const realType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      setImageData({ base64, type: realType });
     };
     reader.readAsDataURL(file);
-  };
 
   const analyze = async () => {
     if (!imageData) return;
