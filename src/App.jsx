@@ -6,7 +6,7 @@ export default function IsoAnalyzer() {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
-  const [activeTab, setActiveTab] = useState("tuberias");
+  const [activeTab, setActiveTab] = useState("geometria");
   const [fileName, setFileName] = useState(null);
   const fileRef = useRef();
 
@@ -33,14 +33,14 @@ export default function IsoAnalyzer() {
     reader.onload = (e) => {
       const img = new window.Image();
       img.onload = () => {
-          const MAX = 1200;
-          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
-          const canvas = document.createElement("canvas");
-          canvas.width = img.width * scale;
-          canvas.height = img.height * scale;
-          const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-          const jpeg = canvas.toDataURL("image/jpeg", 0.80);
+        const MAX = 1200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const jpeg = canvas.toDataURL("image/jpeg", 0.80);
         setImage(jpeg);
         setImageData({ base64: jpeg.split(",")[1], type: "image/jpeg" });
       };
@@ -72,58 +72,154 @@ export default function IsoAnalyzer() {
 
   const exportCSV = () => {
     if (!result) return;
-    const rows = ["ANÁLISIS ISOMÉTRICO\n"];
-    rows.push("TUBERÍAS");
-    rows.push("Tramo,Diámetro,Longitud,Material,Schedule");
-    (result.tuberias || []).forEach(t =>
-      rows.push(`${t.tramo},${t.diametro},${t.longitud},${t.material},${t.schedule}`)
+    const rows = [];
+
+    rows.push("════════════════════════════════════════");
+    rows.push("1. DATOS GEOMÉTRICOS Y DE RUTEO");
+    rows.push("════════════════════════════════════════");
+    rows.push(`Orientación Norte,${result.geometria?.orientacionNorte || "N/D"}`);
+    rows.push(`Elevación BOP,${result.geometria?.elevacionBOP || "N/D"}`);
+    rows.push(`Coord. Inicio Norte,${result.geometria?.coordenadasInicio?.norte || "N/D"}`);
+    rows.push(`Coord. Inicio Este,${result.geometria?.coordenadasInicio?.este || "N/D"}`);
+    rows.push(`Coord. Inicio Elevación,${result.geometria?.coordenadasInicio?.elevacion || "N/D"}`);
+    rows.push(`Coord. Fin Norte,${result.geometria?.coordenadasFin?.norte || "N/D"}`);
+    rows.push(`Coord. Fin Este,${result.geometria?.coordenadasFin?.este || "N/D"}`);
+    rows.push(`Coord. Fin Elevación,${result.geometria?.coordenadasFin?.elevacion || "N/D"}`);
+    if (result.geometria?.angulos?.length > 0) {
+      rows.push("Ángulos," + result.geometria.angulos.join(" | "));
+    }
+
+    rows.push("");
+    rows.push("════════════════════════════════════════");
+    rows.push("2. DATOS DE MATERIALES (MTO)");
+    rows.push("════════════════════════════════════════");
+
+    rows.push("");
+    rows.push("── TUBERÍAS ──");
+    rows.push("Tramo,Diámetro Nominal,Longitud,Schedule,Material");
+    (result.materiales?.tuberias || []).forEach(t =>
+      rows.push(`${t.tramo},${t.diametroNominal},${t.longitud},${t.schedule},${t.material}`)
     );
-    rows.push("\nACCESORIOS");
-    rows.push("Tipo,Diámetro,Rating,Extremos,Material,Cantidad");
-    (result.accesorios || []).forEach(a =>
-      rows.push(`${a.tipo},${a.diametro},${a.rating || ""},${a.extremos || ""},${a.material || ""},${a.cantidad}`)
+
+    rows.push("");
+    rows.push("── ACCESORIOS ──");
+    rows.push("Tipo,Diámetro,Cantidad,Rating,Extremos,Material");
+    (result.materiales?.accesorios || []).forEach(a =>
+      rows.push(`${a.tipo},${a.diametro},${a.cantidad},${a.rating || ""},${a.extremos || ""},${a.material || ""}`)
     );
-    rows.push("\nSOLDADURAS");
-    rows.push(`BW,${result.soldaduras?.bw || 0}`);
-    rows.push(`SW,${result.soldaduras?.sw || 0}`);
-    rows.push(`Roscadas,${result.soldaduras?.roscadas || 0}`);
-    rows.push("\nVÁLVULAS");
-    rows.push("Tipo,Tag,Diámetro,Rating,Cantidad");
-    (result.valvulas || []).forEach(v =>
-      rows.push(`${v.tipo},${v.tag || ""},${v.diametro},${v.rating || ""},${v.cantidad}`)
+
+    rows.push("");
+    rows.push("── BRIDAS ──");
+    rows.push("Tipo,Diámetro,Rating,Cara,Cantidad");
+    (result.materiales?.bridas || []).forEach(b =>
+      rows.push(`${b.tipo},${b.diametro},${b.rating},${b.cara || ""},${b.cantidad}`)
     );
-    rows.push("\nSOPORTES");
-    rows.push("Tipo,Tag,Cantidad");
-    (result.soportes || []).forEach(s =>
-      rows.push(`${s.tipo},${s.tag || ""},${s.cantidad}`)
+
+    rows.push("");
+    rows.push("── VÁLVULAS ──");
+    rows.push("Tipo,Tag,Diámetro,Rating,Operación,Cantidad");
+    (result.materiales?.valvulas || []).forEach(v =>
+      rows.push(`${v.tipo},${v.tag || ""},${v.diametro},${v.rating || ""},${v.operacion || ""},${v.cantidad}`)
     );
+
+    rows.push("");
+    rows.push("── PERNOS ──");
+    rows.push("Diámetro,Longitud,Cantidad");
+    (result.materiales?.pernos || []).forEach(p =>
+      rows.push(`${p.diametro || ""},${p.longitud || ""},${p.cantidad}`)
+    );
+
+    rows.push("");
+    rows.push("── EMPAQUETADURAS ──");
+    rows.push("Tipo,Diámetro,Cantidad");
+    (result.materiales?.empaquetaduras || []).forEach(e =>
+      rows.push(`${e.tipo || ""},${e.diametro || ""},${e.cantidad}`)
+    );
+
+    rows.push("");
+    rows.push("════════════════════════════════════════");
+    rows.push("3. DATOS TÉCNICOS Y OPERATIVOS");
+    rows.push("════════════════════════════════════════");
+    rows.push(`Número de Línea,${result.tecnicos?.lineaNumero || "N/D"}`);
+    rows.push(`Especificación,${result.tecnicos?.especificacion || "N/D"}`);
+    rows.push(`Fluido,${result.tecnicos?.fluido || "N/D"}`);
+    rows.push(`Presión de Diseño,${result.tecnicos?.presionDiseno || "N/D"}`);
+    rows.push(`Temperatura de Diseño,${result.tecnicos?.temperaturaDiseno || "N/D"}`);
+    rows.push(`Aislamiento Tipo,${result.tecnicos?.aislamiento?.tipo || "N/D"}`);
+    rows.push(`Aislamiento Espesor,${result.tecnicos?.aislamiento?.espesor || "N/D"}`);
+    rows.push(`Prueba Tipo,${result.tecnicos?.prueba?.tipo || "N/D"}`);
+    rows.push(`Prueba Presión,${result.tecnicos?.prueba?.presion || "N/D"}`);
+    rows.push("");
+    rows.push("── SOPORTES ──");
+    rows.push("Tag,Tipo,Ubicación");
+    (result.tecnicos?.soportes || []).forEach(s =>
+      rows.push(`${s.tag || ""},${s.tipo},${s.ubicacion || ""}`)
+    );
+
+    rows.push("");
+    rows.push("════════════════════════════════════════");
+    rows.push("4. DATOS DE CONSTRUCCIÓN Y CONTROL");
+    rows.push("════════════════════════════════════════");
+    rows.push(`Revisión del Plano,${result.construccion?.revisionPlano || "N/D"}`);
+    rows.push(`NDT Tipo,${result.construccion?.ndt?.tipo || "N/D"}`);
+    rows.push(`NDT Porcentaje,${result.construccion?.ndt?.porcentaje || "N/D"}`);
+    rows.push("");
+    rows.push("── SOLDADURAS DE TALLER ──");
+    rows.push(`BW Taller,${result.construccion?.soldaduras?.taller?.bw || 0}`);
+    rows.push(`SW Taller,${result.construccion?.soldaduras?.taller?.sw || 0}`);
+    rows.push(`Roscadas Taller,${result.construccion?.soldaduras?.taller?.roscadas || 0}`);
+    rows.push("");
+    rows.push("── SOLDADURAS DE CAMPO ──");
+    rows.push(`BW Campo,${result.construccion?.soldaduras?.campo?.bw || 0}`);
+    rows.push(`SW Campo,${result.construccion?.soldaduras?.campo?.sw || 0}`);
+    rows.push(`Roscadas Campo,${result.construccion?.soldaduras?.campo?.roscadas || 0}`);
+    rows.push("");
+    if (result.construccion?.alertas?.length > 0) {
+      rows.push("── ALERTAS ──");
+      result.construccion.alertas.forEach(a => rows.push(`⚠️,${a}`));
+    }
+
     const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "isometrico.csv";
+    a.download = "isometrico_completo.csv";
     a.click();
   };
 
   const tabs = [
-    { id: "tuberias", label: "🔵 Tuberías" },
-    { id: "accesorios", label: "🔩 Accesorios" },
-    { id: "soldaduras", label: "🔥 Soldaduras" },
-    { id: "valvulas", label: "🚦 Válvulas" },
-    { id: "soportes", label: "🏗️ Soportes" },
+    { id: "geometria", label: "📐 Geometría" },
+    { id: "materiales", label: "🔩 Materiales" },
+    { id: "tecnicos", label: "⚙️ Técnicos" },
+    { id: "construccion", label: "🔥 Construcción" },
   ];
 
+  const S = {
+    page: { minHeight: "100vh", background: "#0B1120", color: "#F1F5F9", fontFamily: "Inter, system-ui, sans-serif" },
+    header: { background: "#111827", borderBottom: "1px solid #1F2D45", padding: "14px 24px", display: "flex", alignItems: "center", gap: 12 },
+    logo: { width: 34, height: 34, background: "#F97316", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 },
+    main: { maxWidth: 900, margin: "0 auto", padding: "24px 16px" },
+    card: { background: "#111827", border: "1px solid #1F2D45", borderRadius: 10, padding: "14px 16px", marginBottom: 16 },
+    sectionTitle: { color: "#F97316", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 },
+    infoGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 },
+    infoBox: { background: "#0B1120", borderRadius: 6, padding: "8px 12px" },
+    infoLabel: { color: "#64748B", fontSize: 10, textTransform: "uppercase", marginBottom: 3 },
+    table: { width: "100%", borderCollapse: "collapse", fontSize: 12 },
+    th: { padding: "8px 14px", textAlign: "left", color: "#64748B", fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #1F2D45", background: "#0B1120" },
+    td: { padding: "9px 14px", borderBottom: "1px solid #1F2D4522" },
+  };
+
   return (
-    <div style={{ minHeight: "100vh", background: "#0B1120", color: "#F1F5F9", fontFamily: "Inter, system-ui, sans-serif" }}>
-      <div style={{ background: "#111827", borderBottom: "1px solid #1F2D45", padding: "14px 24px", display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 34, height: 34, background: "#F97316", borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 18 }}>🔧</div>
+    <div style={S.page}>
+      <div style={S.header}>
+        <div style={S.logo}>🔧</div>
         <div>
           <div style={{ fontWeight: 800, fontSize: 16 }}>ISO<span style={{ color: "#F97316" }}>Analyzer</span></div>
           <div style={{ color: "#64748B", fontSize: 11 }}>Análisis automático de isométricos de tuberías</div>
         </div>
       </div>
 
-      <div style={{ maxWidth: 900, margin: "0 auto", padding: "24px 16px" }}>
+      <div style={S.main}>
         <div
           onClick={() => fileRef.current?.click()}
           onDragOver={e => e.preventDefault()}
@@ -157,7 +253,7 @@ export default function IsoAnalyzer() {
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <div style={{ fontSize: 32, marginBottom: 10 }}>⚙️</div>
             <div style={{ fontWeight: 700, color: "#F97316" }}>Analizando isométrico...</div>
-            <div style={{ color: "#64748B", fontSize: 13, marginTop: 4 }}>Extrayendo tuberías, accesorios y soldaduras</div>
+            <div style={{ color: "#64748B", fontSize: 13, marginTop: 4 }}>Extrayendo datos completos del isométrico</div>
           </div>
         )}
 
@@ -169,39 +265,7 @@ export default function IsoAnalyzer() {
 
         {result && (
           <div>
-            <div style={{ background: "#111827", border: "1px solid #1F2D45", borderRadius: 10, padding: "14px 16px", marginBottom: 16 }}>
-              <div style={{ color: "#F97316", fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>📋 Datos Generales</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
-                {[
-                  ["Línea", result.resumen?.lineaNumero],
-                  ["Fluido", result.resumen?.fluido],
-                  ["Especificación", result.resumen?.especificacion],
-                  ["Material", result.resumen?.material],
-                  ["Presión", result.resumen?.presion],
-                  ["Temperatura", result.resumen?.temperatura],
-                ].map(([label, val]) => (
-                  <div key={label} style={{ background: "#0B1120", borderRadius: 6, padding: "8px 12px" }}>
-                    <div style={{ color: "#64748B", fontSize: 10, textTransform: "uppercase", marginBottom: 3 }}>{label}</div>
-                    <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 10, marginBottom: 16 }}>
-              {[
-                ["Tramos", result.tuberias?.length || 0, "#F97316"],
-                ["Accesorios", result.accesorios?.reduce((s, a) => s + (a.cantidad || 0), 0) || 0, "#3B82F6"],
-                ["Soldaduras", (result.soldaduras?.bw || 0) + (result.soldaduras?.sw || 0) + (result.soldaduras?.roscadas || 0), "#EF4444"],
-                ["Válvulas", result.valvulas?.reduce((s, v) => s + (v.cantidad || 0), 0) || 0, "#10B981"],
-              ].map(([label, val, color]) => (
-                <div key={label} style={{ background: "#111827", border: "1px solid #1F2D45", borderRadius: 10, padding: "12px 14px", textAlign: "center" }}>
-                  <div style={{ fontSize: 26, fontWeight: 900, color }}>{val}</div>
-                  <div style={{ color: "#64748B", fontSize: 11, marginTop: 2 }}>{label}</div>
-                </div>
-              ))}
-            </div>
-
+            {/* Tabs */}
             <div style={{ display: "flex", gap: 4, marginBottom: 14, flexWrap: "wrap" }}>
               {tabs.map(t => (
                 <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
@@ -212,132 +276,228 @@ export default function IsoAnalyzer() {
               ))}
             </div>
 
-            <div style={{ background: "#111827", border: "1px solid #1F2D45", borderRadius: 10, overflow: "hidden", marginBottom: 16 }}>
-              {activeTab === "tuberias" && (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#0B1120" }}>
-                      {["Tramo", "Diámetro", "Longitud", "Material", "Schedule"].map(h => (
-                        <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: "#64748B", fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #1F2D45" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(result.tuberias || []).map((t, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid #1F2D4522" }}>
-                        <td style={{ padding: "9px 14px", color: "#F97316", fontWeight: 700 }}>{t.tramo}</td>
-                        <td style={{ padding: "9px 14px" }}>{t.diametro}</td>
-                        <td style={{ padding: "9px 14px", fontFamily: "monospace" }}>{t.longitud}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{t.material}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{t.schedule}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {activeTab === "accesorios" && (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#0B1120" }}>
-                      {["Tipo", "Diámetro", "Rating", "Extremos", "Material", "Cant."].map(h => (
-                        <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: "#64748B", fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #1F2D45" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(result.accesorios || []).map((a, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid #1F2D4522" }}>
-                        <td style={{ padding: "9px 14px", fontWeight: 600 }}>{a.tipo}</td>
-                        <td style={{ padding: "9px 14px" }}>{a.diametro}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{a.rating || "—"}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{a.extremos || "—"}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{a.material || "—"}</td>
-                        <td style={{ padding: "9px 14px", color: "#F97316", fontWeight: 800, textAlign: "center" }}>{a.cantidad}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {activeTab === "soldaduras" && (
-                <div style={{ padding: 20 }}>
-                  <div style={{ display: "flex", gap: 12, marginBottom: 16 }}>
-                    {[
-                      ["Butt Weld (BW)", result.soldaduras?.bw || 0, "#F97316"],
-                      ["Socket Weld (SW)", result.soldaduras?.sw || 0, "#3B82F6"],
-                      ["Roscadas", result.soldaduras?.roscadas || 0, "#10B981"],
-                    ].map(([label, val, color]) => (
-                      <div key={label} style={{ flex: 1, background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 8, padding: "16px", textAlign: "center" }}>
-                        <div style={{ fontSize: 32, fontWeight: 900, color }}>{val}</div>
-                        <div style={{ color: "#64748B", fontSize: 11, marginTop: 4 }}>{label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  {result.soldaduras?.nota && (
-                    <div style={{ color: "#94A3B8", fontSize: 12 }}>ℹ️ {result.soldaduras.nota}</div>
-                  )}
+            {/* TAB 1 — GEOMETRÍA */}
+            {activeTab === "geometria" && (
+              <div style={S.card}>
+                <div style={S.sectionTitle}>📐 1. Datos Geométricos y de Ruteo</div>
+                <div style={S.infoGrid}>
+                  {[
+                    ["Orientación Norte", result.geometria?.orientacionNorte],
+                    ["Elevación BOP", result.geometria?.elevacionBOP],
+                    ["Coord. Inicio Norte", result.geometria?.coordenadasInicio?.norte],
+                    ["Coord. Inicio Este", result.geometria?.coordenadasInicio?.este],
+                    ["Coord. Inicio Elev.", result.geometria?.coordenadasInicio?.elevacion],
+                    ["Coord. Fin Norte", result.geometria?.coordenadasFin?.norte],
+                    ["Coord. Fin Este", result.geometria?.coordenadasFin?.este],
+                    ["Coord. Fin Elev.", result.geometria?.coordenadasFin?.elevacion],
+                  ].map(([label, val]) => (
+                    <div key={label} style={S.infoBox}>
+                      <div style={S.infoLabel}>{label}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                    </div>
+                  ))}
                 </div>
-              )}
-
-              {activeTab === "valvulas" && (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#0B1120" }}>
-                      {["Tipo", "Tag", "Diámetro", "Rating", "Cant."].map(h => (
-                        <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: "#64748B", fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #1F2D45" }}>{h}</th>
+                {result.geometria?.angulos?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    <div style={S.infoLabel}>Ángulos</div>
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
+                      {result.geometria.angulos.map((a, i) => (
+                        <div key={i} style={{ background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>{a}</div>
                       ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(result.valvulas || []).map((v, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid #1F2D4522" }}>
-                        <td style={{ padding: "9px 14px", fontWeight: 600 }}>{v.tipo}</td>
-                        <td style={{ padding: "9px 14px", color: "#F97316" }}>{v.tag || "—"}</td>
-                        <td style={{ padding: "9px 14px" }}>{v.diametro}</td>
-                        <td style={{ padding: "9px 14px", color: "#94A3B8" }}>{v.rating || "—"}</td>
-                        <td style={{ padding: "9px 14px", color: "#F97316", fontWeight: 800, textAlign: "center" }}>{v.cantidad}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-
-              {activeTab === "soportes" && (
-                <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
-                  <thead>
-                    <tr style={{ background: "#0B1120" }}>
-                      {["Tipo", "Tag", "Cantidad"].map(h => (
-                        <th key={h} style={{ padding: "8px 14px", textAlign: "left", color: "#64748B", fontSize: 10, textTransform: "uppercase", borderBottom: "1px solid #1F2D45" }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(result.soportes || []).map((s, i) => (
-                      <tr key={i} style={{ borderBottom: "1px solid #1F2D4522" }}>
-                        <td style={{ padding: "9px 14px", fontWeight: 600 }}>{s.tipo}</td>
-                        <td style={{ padding: "9px 14px", color: "#F97316" }}>{s.tag || "—"}</td>
-                        <td style={{ padding: "9px 14px", textAlign: "center" }}>{s.cantidad}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-
-            {result.alertas?.length > 0 && (
-              <div style={{ marginBottom: 16 }}>
-                {result.alertas.map((a, i) => (
-                  <div key={i} style={{ background: "#78350f22", border: "1px solid #f59e0b55", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 6 }}>
-                    ⚠️ {a}
+                    </div>
                   </div>
-                ))}
+                )}
               </div>
             )}
 
-            <button onClick={exportCSV} style={{ padding: "10px 20px", background: "transparent", color: "#F97316", border: "1px solid #F97316", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-              ⬇ Exportar CSV
-            </button>
+            {/* TAB 2 — MATERIALES */}
+            {activeTab === "materiales" && (
+              <div>
+                {/* Tuberías */}
+                <div style={S.card}>
+                  <div style={S.sectionTitle}>🔵 Tuberías</div>
+                  <table style={S.table}>
+                    <thead><tr>{["Tramo", "Ø Nominal", "Longitud", "Schedule", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <tbody>
+                      {(result.materiales?.tuberias || []).map((t, i) => (
+                        <tr key={i}><td style={{ ...S.td, color: "#F97316", fontWeight: 700 }}>{t.tramo}</td><td style={S.td}>{t.diametroNominal}</td><td style={S.td}>{t.longitud}</td><td style={S.td}>{t.schedule}</td><td style={S.td}>{t.material}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Accesorios */}
+                <div style={S.card}>
+                  <div style={S.sectionTitle}>🔩 Accesorios</div>
+                  <table style={S.table}>
+                    <thead><tr>{["Tipo", "Ø", "Cant.", "Rating", "Extremos", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <tbody>
+                      {(result.materiales?.accesorios || []).map((a, i) => (
+                        <tr key={i}><td style={S.td}>{a.tipo}</td><td style={S.td}>{a.diametro}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{a.cantidad}</td><td style={S.td}>{a.rating || "—"}</td><td style={S.td}>{a.extremos || "—"}</td><td style={S.td}>{a.material || "—"}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Bridas */}
+                {result.materiales?.bridas?.length > 0 && (
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>🔘 Bridas</div>
+                    <table style={S.table}>
+                      <thead><tr>{["Tipo", "Ø", "Rating", "Cara", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {result.materiales.bridas.map((b, i) => (
+                          <tr key={i}><td style={S.td}>{b.tipo}</td><td style={S.td}>{b.diametro}</td><td style={S.td}>{b.rating}</td><td style={S.td}>{b.cara || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{b.cantidad}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* Válvulas */}
+                <div style={S.card}>
+                  <div style={S.sectionTitle}>🚦 Válvulas</div>
+                  <table style={S.table}>
+                    <thead><tr>{["Tipo", "Tag", "Ø", "Rating", "Operación", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <tbody>
+                      {(result.materiales?.valvulas || []).map((v, i) => (
+                        <tr key={i}><td style={S.td}>{v.tipo}</td><td style={{ ...S.td, color: "#F97316" }}>{v.tag || "—"}</td><td style={S.td}>{v.diametro}</td><td style={S.td}>{v.rating || "—"}</td><td style={S.td}>{v.operacion || "—"}</td><td style={{ ...S.td, fontWeight: 800, textAlign: "center" }}>{v.cantidad}</td></tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Pernos y Empaquetaduras */}
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>🔩 Pernos</div>
+                    <table style={S.table}>
+                      <thead><tr>{["Ø", "Long.", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {(result.materiales?.pernos || []).map((p, i) => (
+                          <tr key={i}><td style={S.td}>{p.diametro || "—"}</td><td style={S.td}>{p.longitud || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{p.cantidad}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>⭕ Empaquetaduras</div>
+                    <table style={S.table}>
+                      <thead><tr>{["Tipo", "Ø", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {(result.materiales?.empaquetaduras || []).map((e, i) => (
+                          <tr key={i}><td style={S.td}>{e.tipo || "—"}</td><td style={S.td}>{e.diametro || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{e.cantidad}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* TAB 3 — TÉCNICOS */}
+            {activeTab === "tecnicos" && (
+              <div style={S.card}>
+                <div style={S.sectionTitle}>⚙️ 3. Datos Técnicos y Operativos</div>
+                <div style={S.infoGrid}>
+                  {[
+                    ["Número de Línea", result.tecnicos?.lineaNumero],
+                    ["Especificación", result.tecnicos?.especificacion],
+                    ["Fluido", result.tecnicos?.fluido],
+                    ["Presión de Diseño", result.tecnicos?.presionDiseno],
+                    ["Temperatura de Diseño", result.tecnicos?.temperaturaDiseno],
+                    ["Aislamiento Tipo", result.tecnicos?.aislamiento?.tipo],
+                    ["Aislamiento Espesor", result.tecnicos?.aislamiento?.espesor],
+                    ["Prueba Tipo", result.tecnicos?.prueba?.tipo],
+                    ["Presión de Prueba", result.tecnicos?.prueba?.presion],
+                  ].map(([label, val]) => (
+                    <div key={label} style={S.infoBox}>
+                      <div style={S.infoLabel}>{label}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                    </div>
+                  ))}
+                </div>
+                {result.tecnicos?.soportes?.length > 0 && (
+                  <div style={{ marginTop: 16 }}>
+                    <div style={S.sectionTitle}>🏗️ Soportes</div>
+                    <table style={S.table}>
+                      <thead><tr>{["Tag", "Tipo", "Ubicación"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <tbody>
+                        {result.tecnicos.soportes.map((s, i) => (
+                          <tr key={i}><td style={{ ...S.td, color: "#F97316" }}>{s.tag || "—"}</td><td style={S.td}>{s.tipo}</td><td style={S.td}>{s.ubicacion || "—"}</td></tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* TAB 4 — CONSTRUCCIÓN */}
+            {activeTab === "construccion" && (
+              <div>
+                <div style={S.card}>
+                  <div style={S.sectionTitle}>📋 4. Datos de Construcción y Control</div>
+                  <div style={S.infoGrid}>
+                    {[
+                      ["Revisión del Plano", result.construccion?.revisionPlano],
+                      ["NDT Tipo", result.construccion?.ndt?.tipo],
+                      ["NDT Porcentaje", result.construccion?.ndt?.porcentaje],
+                    ].map(([label, val]) => (
+                      <div key={label} style={S.infoBox}>
+                        <div style={S.infoLabel}>{label}</div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>🔥 Soldaduras de Taller</div>
+                    {[
+                      ["Butt Weld (BW)", result.construccion?.soldaduras?.taller?.bw || 0, "#F97316"],
+                      ["Socket Weld (SW)", result.construccion?.soldaduras?.taller?.sw || 0, "#3B82F6"],
+                      ["Roscadas", result.construccion?.soldaduras?.taller?.roscadas || 0, "#10B981"],
+                    ].map(([label, val, color]) => (
+                      <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1F2D4522" }}>
+                        <span style={{ color: "#94A3B8", fontSize: 12 }}>{label}</span>
+                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={S.card}>
+                    <div style={S.sectionTitle}>🏗️ Soldaduras de Campo</div>
+                    {[
+                      ["Butt Weld (BW)", result.construccion?.soldaduras?.campo?.bw || 0, "#F97316"],
+                      ["Socket Weld (SW)", result.construccion?.soldaduras?.campo?.sw || 0, "#3B82F6"],
+                      ["Roscadas", result.construccion?.soldaduras?.campo?.roscadas || 0, "#10B981"],
+                    ].map(([label, val, color]) => (
+                      <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1F2D4522" }}>
+                        <span style={{ color: "#94A3B8", fontSize: 12 }}>{label}</span>
+                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{val}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {result.construccion?.alertas?.length > 0 && (
+                  <div style={{ marginTop: 12 }}>
+                    {result.construccion.alertas.map((a, i) => (
+                      <div key={i} style={{ background: "#78350f22", border: "1px solid #f59e0b55", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 6 }}>
+                        ⚠️ {a}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            <div style={{ marginTop: 16 }}>
+              <button onClick={exportCSV} style={{ padding: "10px 20px", background: "transparent", color: "#F97316", border: "1px solid #F97316", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
+                ⬇ Exportar CSV completo
+              </button>
+            </div>
           </div>
         )}
       </div>
