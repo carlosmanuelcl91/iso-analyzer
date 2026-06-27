@@ -7,12 +7,28 @@ export default function IsoAnalyzer() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("tuberias");
+  const [fileName, setFileName] = useState(null);
   const fileRef = useRef();
 
   const handleFile = (file) => {
-    if (!file || !file.type.startsWith("image/")) return;
+    if (!file) return;
     setResult(null);
     setError(null);
+    setFileName(file.name);
+
+    if (file.type === "application/pdf") {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64 = e.target.result.split(",")[1];
+        setImageData({ base64, type: "application/pdf" });
+        setImage("pdf");
+      };
+      reader.readAsDataURL(file);
+      return;
+    }
+
+    if (!file.type.startsWith("image/")) return;
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const img = new window.Image();
@@ -30,7 +46,7 @@ export default function IsoAnalyzer() {
     };
     reader.readAsDataURL(file);
   };
-  
+
   const analyze = async () => {
     if (!imageData) return;
     setLoading(true);
@@ -56,23 +72,28 @@ export default function IsoAnalyzer() {
     if (!result) return;
     const rows = ["ANÁLISIS ISOMÉTRICO\n"];
     rows.push("TUBERÍAS");
-    rows.push("Tramo,Diámetro,Longitud,Material");
+    rows.push("Tramo,Diámetro,Longitud,Material,Schedule");
     (result.tuberias || []).forEach(t =>
-      rows.push(`${t.tramo},${t.diametro},${t.longitud},${t.material}`)
+      rows.push(`${t.tramo},${t.diametro},${t.longitud},${t.material},${t.schedule}`)
     );
     rows.push("\nACCESORIOS");
-    rows.push("Tipo,Diámetro,Cantidad,Material");
+    rows.push("Tipo,Diámetro,Rating,Extremos,Material,Cantidad");
     (result.accesorios || []).forEach(a =>
-      rows.push(`${a.tipo},${a.diametro},${a.cantidad},${a.material || ""}`)
+      rows.push(`${a.tipo},${a.diametro},${a.rating || ""},${a.extremos || ""},${a.material || ""},${a.cantidad}`)
     );
     rows.push("\nSOLDADURAS");
     rows.push(`BW,${result.soldaduras?.bw || 0}`);
     rows.push(`SW,${result.soldaduras?.sw || 0}`);
     rows.push(`Roscadas,${result.soldaduras?.roscadas || 0}`);
     rows.push("\nVÁLVULAS");
-    rows.push("Tipo,Diámetro,Cantidad");
+    rows.push("Tipo,Tag,Diámetro,Rating,Cantidad");
     (result.valvulas || []).forEach(v =>
-      rows.push(`${v.tipo},${v.diametro},${v.cantidad}`)
+      rows.push(`${v.tipo},${v.tag || ""},${v.diametro},${v.rating || ""},${v.cantidad}`)
+    );
+    rows.push("\nSOPORTES");
+    rows.push("Tipo,Tag,Cantidad");
+    (result.soportes || []).forEach(s =>
+      rows.push(`${s.tipo},${s.tag || ""},${s.cantidad}`)
     );
     const blob = new Blob([rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -106,15 +127,22 @@ export default function IsoAnalyzer() {
           onDragOver={e => e.preventDefault()}
           onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
           style={{ border: "2px dashed #1F2D45", borderRadius: 12, padding: image ? 12 : "36px 20px", textAlign: "center", cursor: "pointer", background: "#111827", marginBottom: 16 }}>
-          <input ref={fileRef} type="file" accept="image/*" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
-          {image
-            ? <img src={image} alt="iso" style={{ maxHeight: 260, maxWidth: "100%", borderRadius: 8, objectFit: "contain" }} />
-            : <>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>📐</div>
-                <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Sube el isométrico</div>
-                <div style={{ color: "#64748B", fontSize: 12 }}>Arrastra o haz clic — JPG, PNG, WEBP</div>
-              </>
-          }
+          <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
+          {image === "pdf" ? (
+            <div style={{ padding: "20px 0" }}>
+              <div style={{ fontSize: 48, marginBottom: 10 }}>📄</div>
+              <div style={{ fontWeight: 700, color: "#F97316" }}>{fileName}</div>
+              <div style={{ color: "#64748B", fontSize: 12, marginTop: 4 }}>PDF cargado — haz clic para cambiar</div>
+            </div>
+          ) : image ? (
+            <img src={image} alt="iso" style={{ maxHeight: 260, maxWidth: "100%", borderRadius: 8, objectFit: "contain" }} />
+          ) : (
+            <>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>📐</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Sube el isométrico</div>
+              <div style={{ color: "#64748B", fontSize: 12 }}>Arrastra o haz clic — JPG, PNG, WEBP, PDF</div>
+            </>
+          )}
         </div>
 
         {image && !loading && (
