@@ -11,33 +11,19 @@ export default async function handler(req, res) {
 
   try {
     const isPdf = type === "application/pdf";
-    
+
     const messageContent = isPdf ? [
       {
         type: "document",
-        source: {
-          type: "base64",
-          media_type: "application/pdf",
-          data: image,
-        },
+        source: { type: "base64", media_type: "application/pdf", data: image },
       },
-      {
-        type: "text",
-        text: "Analiza este isométrico y devuelve el JSON con todos los datos.",
-      },
+      { type: "text", text: "Analiza este isométrico y devuelve el JSON con todos los datos." },
     ] : [
       {
         type: "image",
-        source: {
-          type: "base64",
-          media_type: "image/jpeg",
-          data: image,
-        },
+        source: { type: "base64", media_type: "image/jpeg", data: image },
       },
-      {
-        type: "text",
-        text: "Analiza este isométrico y devuelve el JSON con todos los datos.",
-      },
+      { type: "text", text: "Analiza este isométrico y devuelve el JSON con todos los datos." },
     ];
 
     const response = await fetch("https://api.anthropic.com/v1/messages", {
@@ -49,43 +35,59 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2000,
-        system: `Eres un experto en ingeniería de tuberías e isométricos de piping. Analiza la imagen y extrae TODOS los datos. Responde SOLO con JSON puro, sin markdown ni backticks:
+        max_tokens: 3000,
+        system: `Eres un experto en ingeniería de tuberías e isométricos de piping. Analiza la imagen y extrae TODOS los datos posibles organizados en 4 categorías. Responde SOLO con JSON puro, sin markdown ni backticks:
 {
-  "resumen": {
+  "geometria": {
+    "orientacionNorte": null,
+    "coordenadasInicio": { "norte": null, "este": null, "elevacion": null },
+    "coordenadasFin": { "norte": null, "este": null, "elevacion": null },
+    "elevacionBOP": null,
+    "angulos": []
+  },
+  "materiales": {
+    "tuberias": [
+      { "tramo": "", "diametroNominal": "", "longitud": "", "schedule": "", "material": "" }
+    ],
+    "accesorios": [
+      { "tipo": "", "diametro": "", "cantidad": 0, "rating": null, "extremos": null, "material": null }
+    ],
+    "bridas": [
+      { "tipo": "", "diametro": "", "rating": "", "cara": null, "cantidad": 0 }
+    ],
+    "valvulas": [
+      { "tipo": "", "tag": null, "diametro": "", "rating": null, "operacion": null, "cantidad": 0 }
+    ],
+    "pernos": [
+      { "diametro": null, "longitud": null, "cantidad": 0 }
+    ],
+    "empaquetaduras": [
+      { "tipo": null, "diametro": null, "cantidad": 0 }
+    ]
+  },
+  "tecnicos": {
     "lineaNumero": null,
-    "fluido": null,
     "especificacion": null,
-    "material": null,
-    "presion": null,
-    "temperatura": null
+    "fluido": null,
+    "presionDiseno": null,
+    "temperaturaDiseno": null,
+    "aislamiento": { "tipo": null, "espesor": null },
+    "soportes": [
+      { "tag": null, "tipo": "", "ubicacion": null }
+    ],
+    "prueba": { "tipo": null, "presion": null }
   },
-  "tuberias": [
-    { "tramo": "", "diametro": "", "longitud": "", "material": "", "schedule": "" }
-  ],
-  "accesorios": [
-    { "tipo": "", "diametro": "", "rating": null, "extremos": null, "material": null, "cantidad": 0 }
-  ],
-  "soldaduras": {
-    "bw": 0,
-    "sw": 0,
-    "roscadas": 0,
-    "nota": null
-  },
-  "valvulas": [
-    { "tipo": "", "tag": null, "diametro": "", "rating": null, "cantidad": 0 }
-  ],
-  "soportes": [
-    { "tipo": "", "tag": null, "cantidad": 0 }
-  ],
-  "alertas": []
+  "construccion": {
+    "revisionPlano": null,
+    "soldaduras": {
+      "taller": { "bw": 0, "sw": 0, "roscadas": 0 },
+      "campo": { "bw": 0, "sw": 0, "roscadas": 0 }
+    },
+    "ndt": { "tipo": null, "porcentaje": null },
+    "alertas": []
+  }
 }`,
-        messages: [
-          {
-            role: "user",
-            content: messageContent,
-          },
-        ],
+        messages: [{ role: "user", content: messageContent }],
       }),
     });
 
@@ -106,7 +108,7 @@ export default async function handler(req, res) {
     let parsed;
     try {
       parsed = JSON.parse(clean);
-    } catch(e) {
+    } catch (e) {
       return res.status(500).json({ error: "Error procesando respuesta: " + clean.substring(0, 200) });
     }
 
