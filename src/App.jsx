@@ -16,12 +16,16 @@ export default function IsoAnalyzer() {
     setError(null);
     const reader = new FileReader();
     reader.onload = (e) => {
-      const base64 = e.target.result.split(",")[1];
-      const mimeMatch = e.target.result.match(/data:([^;]+);/);
-      const realType = mimeMatch ? mimeMatch[1] : "image/jpeg";
+      const dataUrl = e.target.result;
+      const base64 = dataUrl.split(",")[1];
+      let realType = "image/jpeg";
+      if (dataUrl.startsWith("data:image/png")) realType = "image/png";
+      if (dataUrl.startsWith("data:image/webp")) realType = "image/webp";
+      if (dataUrl.startsWith("data:image/gif")) realType = "image/gif";
       setImageData({ base64, type: realType });
     };
     reader.readAsDataURL(file);
+  };
 
   const analyze = async () => {
     if (!imageData) return;
