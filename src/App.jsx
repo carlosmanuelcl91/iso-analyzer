@@ -18,8 +18,8 @@ export default function IsoAnalyzer() {
 
     if (file.type === "application/pdf") {
       const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target.result.split(",")[1];
+      reader.onload = (ev) => {
+        const base64 = ev.target.result.split(",")[1];
         setImageData({ base64, type: "application/pdf" });
         setImage("pdf");
       };
@@ -30,7 +30,7 @@ export default function IsoAnalyzer() {
     if (!file.type.startsWith("image/")) return;
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = (ev) => {
       const img = new window.Image();
       img.onload = () => {
         const MAX = 1200;
@@ -44,7 +44,7 @@ export default function IsoAnalyzer() {
         setImage(jpeg);
         setImageData({ base64: jpeg.split(",")[1], type: "image/jpeg" });
       };
-      img.src = e.target.result;
+      img.src = ev.target.result;
     };
     reader.readAsDataURL(file);
   };
@@ -63,8 +63,8 @@ export default function IsoAnalyzer() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setResult(data);
-    } catch (e) {
-      setError(e.message || "Error al analizar.");
+    } catch (err) {
+      setError(err.message || "Error al analizar.");
     } finally {
       setLoading(false);
     }
@@ -132,8 +132,8 @@ export default function IsoAnalyzer() {
     rows.push("");
     rows.push("── EMPAQUETADURAS ──");
     rows.push("Tipo,Diámetro,Cantidad");
-    (result.materiales?.empaquetaduras || []).forEach(e =>
-      rows.push(`${e.tipo || ""},${e.diametro || ""},${e.cantidad}`)
+    (result.materiales?.empaquetaduras || []).forEach(emp =>
+      rows.push(`${emp.tipo || ""},${emp.diametro || ""},${emp.cantidad}`)
     );
 
     rows.push("");
@@ -176,7 +176,7 @@ export default function IsoAnalyzer() {
     rows.push("");
     if (result.construccion?.alertas?.length > 0) {
       rows.push("── ALERTAS ──");
-      result.construccion.alertas.forEach(a => rows.push(`⚠️,${a}`));
+      result.construccion.alertas.forEach(alerta => rows.push(`ALERTA,${alerta}`));
     }
 
     const BOM = "\uFEFF";
@@ -223,10 +223,10 @@ export default function IsoAnalyzer() {
       <div style={S.main}>
         <div
           onClick={() => fileRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => { e.preventDefault(); handleFile(e.dataTransfer.files[0]); }}
+          onDragOver={ev => ev.preventDefault()}
+          onDrop={ev => { ev.preventDefault(); handleFile(ev.dataTransfer.files[0]); }}
           style={{ border: "2px dashed #1F2D45", borderRadius: 12, padding: image ? 12 : "36px 20px", textAlign: "center", cursor: "pointer", background: "#111827", marginBottom: 16 }}>
-          <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={e => handleFile(e.target.files[0])} />
+          <input ref={fileRef} type="file" accept="image/*,application/pdf" style={{ display: "none" }} onChange={ev => handleFile(ev.target.files[0])} />
           {image === "pdf" ? (
             <div style={{ padding: "20px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 10 }}>📄</div>
@@ -266,7 +266,6 @@ export default function IsoAnalyzer() {
 
         {result && (
           <div>
-            {/* Tabs */}
             <div style={{ display: "flex", gap: 4, marginBottom: 14, flexWrap: "wrap" }}>
               {tabs.map(t => (
                 <button key={t.id} onClick={() => setActiveTab(t.id)} style={{
@@ -277,7 +276,6 @@ export default function IsoAnalyzer() {
               ))}
             </div>
 
-            {/* TAB 1 — GEOMETRÍA */}
             {activeTab === "geometria" && (
               <div style={S.card}>
                 <div style={S.sectionTitle}>📐 1. Datos Geométricos y de Ruteo</div>
@@ -302,8 +300,8 @@ export default function IsoAnalyzer() {
                   <div style={{ marginTop: 12 }}>
                     <div style={S.infoLabel}>Ángulos</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
-                      {result.geometria.angulos.map((a, i) => (
-                        <div key={i} style={{ background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>{a}</div>
+                      {result.geometria.angulos.map((ang, i) => (
+                        <div key={i} style={{ background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>{ang}</div>
                       ))}
                     </div>
                   </div>
@@ -311,72 +309,96 @@ export default function IsoAnalyzer() {
               </div>
             )}
 
-            {/* TAB 2 — MATERIALES */}
             {activeTab === "materiales" && (
               <div>
-                {/* Tuberías */}
                 <div style={S.card}>
                   <div style={S.sectionTitle}>🔵 Tuberías</div>
                   <table style={S.table}>
                     <thead><tr>{["Tramo", "Ø Nominal", "Longitud", "Schedule", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
                       {(result.materiales?.tuberias || []).map((t, i) => (
-                        <tr key={i}><td style={{ ...S.td, color: "#F97316", fontWeight: 700 }}>{t.tramo}</td><td style={S.td}>{t.diametroNominal}</td><td style={S.td}>{t.longitud}</td><td style={S.td}>{t.schedule}</td><td style={S.td}>{t.material}</td></tr>
+                        <tr key={i}>
+                          <td style={{ ...S.td, color: "#F97316", fontWeight: 700 }}>{t.tramo}</td>
+                          <td style={S.td}>{t.diametroNominal}</td>
+                          <td style={S.td}>{t.longitud}</td>
+                          <td style={S.td}>{t.schedule}</td>
+                          <td style={S.td}>{t.material}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Accesorios */}
                 <div style={S.card}>
                   <div style={S.sectionTitle}>🔩 Accesorios</div>
                   <table style={S.table}>
                     <thead><tr>{["Tipo", "Ø", "Cant.", "Rating", "Extremos", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
-                      {(result.materiales?.accesorios || []).map((a, i) => (
-                        <tr key={i}><td style={S.td}>{a.tipo}</td><td style={S.td}>{a.diametro}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{a.cantidad}</td><td style={S.td}>{a.rating || "—"}</td><td style={S.td}>{a.extremos || "—"}</td><td style={S.td}>{a.material || "—"}</td></tr>
+                      {(result.materiales?.accesorios || []).map((acc, i) => (
+                        <tr key={i}>
+                          <td style={S.td}>{acc.tipo}</td>
+                          <td style={S.td}>{acc.diametro}</td>
+                          <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{acc.cantidad}</td>
+                          <td style={S.td}>{acc.rating || "—"}</td>
+                          <td style={S.td}>{acc.extremos || "—"}</td>
+                          <td style={S.td}>{acc.material || "—"}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Bridas */}
                 {result.materiales?.bridas?.length > 0 && (
                   <div style={S.card}>
                     <div style={S.sectionTitle}>🔘 Bridas</div>
                     <table style={S.table}>
                       <thead><tr>{["Tipo", "Ø", "Rating", "Cara", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {result.materiales.bridas.map((b, i) => (
-                          <tr key={i}><td style={S.td}>{b.tipo}</td><td style={S.td}>{b.diametro}</td><td style={S.td}>{b.rating}</td><td style={S.td}>{b.cara || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{b.cantidad}</td></tr>
+                        {result.materiales.bridas.map((bri, i) => (
+                          <tr key={i}>
+                            <td style={S.td}>{bri.tipo}</td>
+                            <td style={S.td}>{bri.diametro}</td>
+                            <td style={S.td}>{bri.rating}</td>
+                            <td style={S.td}>{bri.cara || "—"}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{bri.cantidad}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                 )}
 
-                {/* Válvulas */}
                 <div style={S.card}>
                   <div style={S.sectionTitle}>🚦 Válvulas</div>
                   <table style={S.table}>
                     <thead><tr>{["Tipo", "Tag", "Ø", "Rating", "Operación", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
-                      {(result.materiales?.valvulas || []).map((v, i) => (
-                        <tr key={i}><td style={S.td}>{v.tipo}</td><td style={{ ...S.td, color: "#F97316" }}>{v.tag || "—"}</td><td style={S.td}>{v.diametro}</td><td style={S.td}>{v.rating || "—"}</td><td style={S.td}>{v.operacion || "—"}</td><td style={{ ...S.td, fontWeight: 800, textAlign: "center" }}>{v.cantidad}</td></tr>
+                      {(result.materiales?.valvulas || []).map((val, i) => (
+                        <tr key={i}>
+                          <td style={S.td}>{val.tipo}</td>
+                          <td style={{ ...S.td, color: "#F97316" }}>{val.tag || "—"}</td>
+                          <td style={S.td}>{val.diametro}</td>
+                          <td style={S.td}>{val.rating || "—"}</td>
+                          <td style={S.td}>{val.operacion || "—"}</td>
+                          <td style={{ ...S.td, fontWeight: 800, textAlign: "center" }}>{val.cantidad}</td>
+                        </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
 
-                {/* Pernos y Empaquetaduras */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div style={S.card}>
                     <div style={S.sectionTitle}>🔩 Pernos</div>
                     <table style={S.table}>
                       <thead><tr>{["Ø", "Long.", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {(result.materiales?.pernos || []).map((p, i) => (
-                          <tr key={i}><td style={S.td}>{p.diametro || "—"}</td><td style={S.td}>{p.longitud || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{p.cantidad}</td></tr>
+                        {(result.materiales?.pernos || []).map((per, i) => (
+                          <tr key={i}>
+                            <td style={S.td}>{per.diametro || "—"}</td>
+                            <td style={S.td}>{per.longitud || "—"}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{per.cantidad}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
@@ -386,8 +408,12 @@ export default function IsoAnalyzer() {
                     <table style={S.table}>
                       <thead><tr>{["Tipo", "Ø", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {(result.materiales?.empaquetaduras || []).map((e, i) => (
-                          <tr key={i}><td style={S.td}>{e.tipo || "—"}</td><td style={S.td}>{e.diametro || "—"}</td><td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{e.cantidad}</td></tr>
+                        {(result.materiales?.empaquetaduras || []).map((emp, i) => (
+                          <tr key={i}>
+                            <td style={S.td}>{emp.tipo || "—"}</td>
+                            <td style={S.td}>{emp.diametro || "—"}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{emp.cantidad}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
@@ -396,7 +422,6 @@ export default function IsoAnalyzer() {
               </div>
             )}
 
-            {/* TAB 3 — TÉCNICOS */}
             {activeTab === "tecnicos" && (
               <div style={S.card}>
                 <div style={S.sectionTitle}>⚙️ 3. Datos Técnicos y Operativos</div>
@@ -424,8 +449,12 @@ export default function IsoAnalyzer() {
                     <table style={S.table}>
                       <thead><tr>{["Tag", "Tipo", "Ubicación"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
-                        {result.tecnicos.soportes.map((s, i) => (
-                          <tr key={i}><td style={{ ...S.td, color: "#F97316" }}>{s.tag || "—"}</td><td style={S.td}>{s.tipo}</td><td style={S.td}>{s.ubicacion || "—"}</td></tr>
+                        {result.tecnicos.soportes.map((sop, i) => (
+                          <tr key={i}>
+                            <td style={{ ...S.td, color: "#F97316" }}>{sop.tag || "—"}</td>
+                            <td style={S.td}>{sop.tipo}</td>
+                            <td style={S.td}>{sop.ubicacion || "—"}</td>
+                          </tr>
                         ))}
                       </tbody>
                     </table>
@@ -434,7 +463,6 @@ export default function IsoAnalyzer() {
               </div>
             )}
 
-            {/* TAB 4 — CONSTRUCCIÓN */}
             {activeTab === "construccion" && (
               <div>
                 <div style={S.card}>
@@ -484,9 +512,9 @@ export default function IsoAnalyzer() {
 
                 {result.construccion?.alertas?.length > 0 && (
                   <div style={{ marginTop: 12 }}>
-                    {result.construccion.alertas.map((a, i) => (
+                    {result.construccion.alertas.map((alerta, i) => (
                       <div key={i} style={{ background: "#78350f22", border: "1px solid #f59e0b55", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 6 }}>
-                        ⚠️ {a}
+                        ⚠️ {alerta}
                       </div>
                     ))}
                   </div>
