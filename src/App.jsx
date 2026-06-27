@@ -17,7 +17,7 @@ export default function IsoAnalyzer() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target.result.split(",")[1];
-      setImageData({ base64, type: file.type });
+      setImageData({ base64, type: "image/jpeg" });
     };
     reader.readAsDataURL(file);
   };
