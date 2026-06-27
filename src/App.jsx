@@ -33,12 +33,14 @@ export default function IsoAnalyzer() {
     reader.onload = (e) => {
       const img = new window.Image();
       img.onload = () => {
-        const canvas = document.createElement("canvas");
-        canvas.width = img.width;
-        canvas.height = img.height;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0);
-        const jpeg = canvas.toDataURL("image/jpeg", 0.92);
+          const MAX = 1200;
+          const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+          const canvas = document.createElement("canvas");
+          canvas.width = img.width * scale;
+          canvas.height = img.height * scale;
+          const ctx = canvas.getContext("2d");
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const jpeg = canvas.toDataURL("image/jpeg", 0.80);
         setImage(jpeg);
         setImageData({ base64: jpeg.split(",")[1], type: "image/jpeg" });
       };
