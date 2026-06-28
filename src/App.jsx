@@ -2,8 +2,9 @@ import { useState, useRef } from "react";
 
 const str = (val) => {
   if (val === null || val === undefined) return "N/D";
-  if (typeof val === "object") return JSON.stringify(val);
-  return String(val);
+  if (typeof val === "object") return `"${JSON.stringify(val)}"`;
+  const s = String(val);
+  return s.includes(",") ? `"${s}"` : s;
 };
 
 export default function IsoAnalyzer() {
