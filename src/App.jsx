@@ -1,5 +1,11 @@
 import { useState, useRef } from "react";
 
+const str = (val) => {
+  if (val === null || val === undefined) return "N/D";
+  if (typeof val === "object") return JSON.stringify(val);
+  return String(val);
+};
+
 export default function IsoAnalyzer() {
   const [image, setImage] = useState(null);
   const [imageData, setImageData] = useState(null);
@@ -73,112 +79,92 @@ export default function IsoAnalyzer() {
   const exportCSV = () => {
     if (!result) return;
     const rows = [];
-
-    rows.push("════════════════════════════════════════");
-    rows.push("1. DATOS GEOMÉTRICOS Y DE RUTEO");
-    rows.push("════════════════════════════════════════");
-    rows.push(`Orientación Norte,${result.geometria?.orientacionNorte || "N/D"}`);
-    rows.push(`Elevación BOP,${result.geometria?.elevacionBOP || "N/D"}`);
-    rows.push(`Coord. Inicio Norte,${result.geometria?.coordenadasInicio?.norte || "N/D"}`);
-    rows.push(`Coord. Inicio Este,${result.geometria?.coordenadasInicio?.este || "N/D"}`);
-    rows.push(`Coord. Inicio Elevación,${result.geometria?.coordenadasInicio?.elevacion || "N/D"}`);
-    rows.push(`Coord. Fin Norte,${result.geometria?.coordenadasFin?.norte || "N/D"}`);
-    rows.push(`Coord. Fin Este,${result.geometria?.coordenadasFin?.este || "N/D"}`);
-    rows.push(`Coord. Fin Elevación,${result.geometria?.coordenadasFin?.elevacion || "N/D"}`);
+    rows.push("1. DATOS GEOMETRICOS Y DE RUTEO");
+    rows.push(`Orientacion Norte,${str(result.geometria?.orientacionNorte)}`);
+    rows.push(`Elevacion BOP,${str(result.geometria?.elevacionBOP)}`);
+    rows.push(`Coord. Inicio Norte,${str(result.geometria?.coordenadasInicio?.norte)}`);
+    rows.push(`Coord. Inicio Este,${str(result.geometria?.coordenadasInicio?.este)}`);
+    rows.push(`Coord. Inicio Elevacion,${str(result.geometria?.coordenadasInicio?.elevacion)}`);
+    rows.push(`Coord. Fin Norte,${str(result.geometria?.coordenadasFin?.norte)}`);
+    rows.push(`Coord. Fin Este,${str(result.geometria?.coordenadasFin?.este)}`);
+    rows.push(`Coord. Fin Elevacion,${str(result.geometria?.coordenadasFin?.elevacion)}`);
     if (result.geometria?.angulos?.length > 0) {
-      rows.push("Ángulos," + result.geometria.angulos.join(" | "));
+      rows.push("Angulos," + result.geometria.angulos.map(str).join(" | "));
     }
-
     rows.push("");
-    rows.push("════════════════════════════════════════");
     rows.push("2. DATOS DE MATERIALES (MTO)");
-    rows.push("════════════════════════════════════════");
-
-    rows.push("");
-    rows.push("── TUBERÍAS ──");
-    rows.push("Tramo,Diámetro Nominal,Longitud,Schedule,Material");
+    rows.push("TUBERIAS");
+    rows.push("Tramo,Diametro Nominal,Longitud,Schedule,Material");
     (result.materiales?.tuberias || []).forEach(t =>
-      rows.push(`${t.tramo},${t.diametroNominal},${t.longitud},${t.schedule},${t.material}`)
+      rows.push(`${str(t.tramo)},${str(t.diametroNominal)},${str(t.longitud)},${str(t.schedule)},${str(t.material)}`)
     );
-
     rows.push("");
-    rows.push("── ACCESORIOS ──");
-    rows.push("Tipo,Diámetro,Cantidad,Rating,Extremos,Material");
+    rows.push("ACCESORIOS");
+    rows.push("Tipo,Diametro,Cantidad,Rating,Extremos,Material");
     (result.materiales?.accesorios || []).forEach(a =>
-      rows.push(`${a.tipo},${a.diametro},${a.cantidad},${a.rating || ""},${a.extremos || ""},${a.material || ""}`)
+      rows.push(`${str(a.tipo)},${str(a.diametro)},${str(a.cantidad)},${str(a.rating)},${str(a.extremos)},${str(a.material)}`)
     );
-
     rows.push("");
-    rows.push("── BRIDAS ──");
-    rows.push("Tipo,Diámetro,Rating,Cara,Cantidad");
+    rows.push("BRIDAS");
+    rows.push("Tipo,Diametro,Rating,Cara,Cantidad");
     (result.materiales?.bridas || []).forEach(b =>
-      rows.push(`${b.tipo},${b.diametro},${b.rating},${b.cara || ""},${b.cantidad}`)
+      rows.push(`${str(b.tipo)},${str(b.diametro)},${str(b.rating)},${str(b.cara)},${str(b.cantidad)}`)
     );
-
     rows.push("");
-    rows.push("── VÁLVULAS ──");
-    rows.push("Tipo,Tag,Diámetro,Rating,Operación,Cantidad");
+    rows.push("VALVULAS");
+    rows.push("Tipo,Tag,Diametro,Rating,Operacion,Cantidad");
     (result.materiales?.valvulas || []).forEach(v =>
-      rows.push(`${v.tipo},${v.tag || ""},${v.diametro},${v.rating || ""},${v.operacion || ""},${v.cantidad}`)
+      rows.push(`${str(v.tipo)},${str(v.tag)},${str(v.diametro)},${str(v.rating)},${str(v.operacion)},${str(v.cantidad)}`)
     );
-
     rows.push("");
-    rows.push("── PERNOS ──");
-    rows.push("Diámetro,Longitud,Cantidad");
+    rows.push("PERNOS");
+    rows.push("Diametro,Longitud,Cantidad");
     (result.materiales?.pernos || []).forEach(p =>
-      rows.push(`${p.diametro || ""},${p.longitud || ""},${p.cantidad}`)
+      rows.push(`${str(p.diametro)},${str(p.longitud)},${str(p.cantidad)}`)
     );
-
     rows.push("");
-    rows.push("── EMPAQUETADURAS ──");
-    rows.push("Tipo,Diámetro,Cantidad");
+    rows.push("EMPAQUETADURAS");
+    rows.push("Tipo,Diametro,Cantidad");
     (result.materiales?.empaquetaduras || []).forEach(emp =>
-      rows.push(`${emp.tipo || ""},${emp.diametro || ""},${emp.cantidad}`)
+      rows.push(`${str(emp.tipo)},${str(emp.diametro)},${str(emp.cantidad)}`)
     );
-
     rows.push("");
-    rows.push("════════════════════════════════════════");
-    rows.push("3. DATOS TÉCNICOS Y OPERATIVOS");
-    rows.push("════════════════════════════════════════");
-    rows.push(`Número de Línea,${result.tecnicos?.lineaNumero || "N/D"}`);
-    rows.push(`Especificación,${result.tecnicos?.especificacion || "N/D"}`);
-    rows.push(`Fluido,${result.tecnicos?.fluido || "N/D"}`);
-    rows.push(`Presión de Diseño,${result.tecnicos?.presionDiseno || "N/D"}`);
-    rows.push(`Temperatura de Diseño,${result.tecnicos?.temperaturaDiseno || "N/D"}`);
-    rows.push(`Aislamiento Tipo,${result.tecnicos?.aislamiento?.tipo || "N/D"}`);
-    rows.push(`Aislamiento Espesor,${result.tecnicos?.aislamiento?.espesor || "N/D"}`);
-    rows.push(`Prueba Tipo,${result.tecnicos?.prueba?.tipo || "N/D"}`);
-    rows.push(`Prueba Presión,${result.tecnicos?.prueba?.presion || "N/D"}`);
+    rows.push("3. DATOS TECNICOS Y OPERATIVOS");
+    rows.push(`Numero de Linea,${str(result.tecnicos?.lineaNumero)}`);
+    rows.push(`Especificacion,${str(result.tecnicos?.especificacion)}`);
+    rows.push(`Fluido,${str(result.tecnicos?.fluido)}`);
+    rows.push(`Presion de Diseno,${str(result.tecnicos?.presionDiseno)}`);
+    rows.push(`Temperatura de Diseno,${str(result.tecnicos?.temperaturaDiseno)}`);
+    rows.push(`Aislamiento Tipo,${str(result.tecnicos?.aislamiento?.tipo)}`);
+    rows.push(`Aislamiento Espesor,${str(result.tecnicos?.aislamiento?.espesor)}`);
+    rows.push(`Prueba Tipo,${str(result.tecnicos?.prueba?.tipo)}`);
+    rows.push(`Prueba Presion,${str(result.tecnicos?.prueba?.presion)}`);
     rows.push("");
-    rows.push("── SOPORTES ──");
-    rows.push("Tag,Tipo,Ubicación");
+    rows.push("SOPORTES");
+    rows.push("Tag,Tipo,Ubicacion");
     (result.tecnicos?.soportes || []).forEach(s =>
-      rows.push(`${s.tag || ""},${s.tipo},${s.ubicacion || ""}`)
+      rows.push(`${str(s.tag)},${str(s.tipo)},${str(s.ubicacion)}`)
     );
-
     rows.push("");
-    rows.push("════════════════════════════════════════");
-    rows.push("4. DATOS DE CONSTRUCCIÓN Y CONTROL");
-    rows.push("════════════════════════════════════════");
-    rows.push(`Revisión del Plano,${result.construccion?.revisionPlano || "N/D"}`);
-    rows.push(`NDT Tipo,${result.construccion?.ndt?.tipo || "N/D"}`);
-    rows.push(`NDT Porcentaje,${result.construccion?.ndt?.porcentaje || "N/D"}`);
+    rows.push("4. DATOS DE CONSTRUCCION Y CONTROL");
+    rows.push(`Revision del Plano,${str(result.construccion?.revisionPlano)}`);
+    rows.push(`NDT Tipo,${str(result.construccion?.ndt?.tipo)}`);
+    rows.push(`NDT Porcentaje,${str(result.construccion?.ndt?.porcentaje)}`);
     rows.push("");
-    rows.push("── SOLDADURAS DE TALLER ──");
-    rows.push(`BW Taller,${result.construccion?.soldaduras?.taller?.bw || 0}`);
-    rows.push(`SW Taller,${result.construccion?.soldaduras?.taller?.sw || 0}`);
-    rows.push(`Roscadas Taller,${result.construccion?.soldaduras?.taller?.roscadas || 0}`);
+    rows.push("SOLDADURAS DE TALLER");
+    rows.push(`BW Taller,${str(result.construccion?.soldaduras?.taller?.bw)}`);
+    rows.push(`SW Taller,${str(result.construccion?.soldaduras?.taller?.sw)}`);
+    rows.push(`Roscadas Taller,${str(result.construccion?.soldaduras?.taller?.roscadas)}`);
     rows.push("");
-    rows.push("── SOLDADURAS DE CAMPO ──");
-    rows.push(`BW Campo,${result.construccion?.soldaduras?.campo?.bw || 0}`);
-    rows.push(`SW Campo,${result.construccion?.soldaduras?.campo?.sw || 0}`);
-    rows.push(`Roscadas Campo,${result.construccion?.soldaduras?.campo?.roscadas || 0}`);
+    rows.push("SOLDADURAS DE CAMPO");
+    rows.push(`BW Campo,${str(result.construccion?.soldaduras?.campo?.bw)}`);
+    rows.push(`SW Campo,${str(result.construccion?.soldaduras?.campo?.sw)}`);
+    rows.push(`Roscadas Campo,${str(result.construccion?.soldaduras?.campo?.roscadas)}`);
     rows.push("");
     if (result.construccion?.alertas?.length > 0) {
-      rows.push("── ALERTAS ──");
-      result.construccion.alertas.forEach(alerta => rows.push(`ALERTA,${alerta}`));
+      rows.push("ALERTAS");
+      result.construccion.alertas.forEach(alerta => rows.push(`ALERTA,${str(alerta)}`));
     }
-
     const BOM = "\uFEFF";
     const blob = new Blob([BOM + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -189,10 +175,10 @@ export default function IsoAnalyzer() {
   };
 
   const tabs = [
-    { id: "geometria", label: "📐 Geometría" },
-    { id: "materiales", label: "🔩 Materiales" },
-    { id: "tecnicos", label: "⚙️ Técnicos" },
-    { id: "construccion", label: "🔥 Construcción" },
+    { id: "geometria", label: "Geometria" },
+    { id: "materiales", label: "Materiales" },
+    { id: "tecnicos", label: "Tecnicos" },
+    { id: "construccion", label: "Construccion" },
   ];
 
   const S = {
@@ -216,7 +202,7 @@ export default function IsoAnalyzer() {
         <div style={S.logo}>🔧</div>
         <div>
           <div style={{ fontWeight: 800, fontSize: 16 }}>ISO<span style={{ color: "#F97316" }}>Analyzer</span></div>
-          <div style={{ color: "#64748B", fontSize: 11 }}>Análisis automático de isométricos de tuberías</div>
+          <div style={{ color: "#64748B", fontSize: 11 }}>Analisis automatico de isometricos de tuberias</div>
         </div>
       </div>
 
@@ -231,36 +217,36 @@ export default function IsoAnalyzer() {
             <div style={{ padding: "20px 0" }}>
               <div style={{ fontSize: 48, marginBottom: 10 }}>📄</div>
               <div style={{ fontWeight: 700, color: "#F97316" }}>{fileName}</div>
-              <div style={{ color: "#64748B", fontSize: 12, marginTop: 4 }}>PDF cargado — haz clic para cambiar</div>
+              <div style={{ color: "#64748B", fontSize: 12, marginTop: 4 }}>PDF cargado</div>
             </div>
           ) : image ? (
             <img src={image} alt="iso" style={{ maxHeight: 260, maxWidth: "100%", borderRadius: 8, objectFit: "contain" }} />
           ) : (
             <>
               <div style={{ fontSize: 36, marginBottom: 10 }}>📐</div>
-              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Sube el isométrico</div>
-              <div style={{ color: "#64748B", fontSize: 12 }}>Arrastra o haz clic — JPG, PNG, WEBP, PDF</div>
+              <div style={{ fontWeight: 700, fontSize: 15, marginBottom: 4 }}>Sube el isometrico</div>
+              <div style={{ color: "#64748B", fontSize: 12 }}>JPG, PNG, WEBP, PDF</div>
             </>
           )}
         </div>
 
         {image && !loading && (
           <button onClick={analyze} style={{ width: "100%", padding: 14, background: "#F97316", color: "#fff", border: "none", borderRadius: 8, fontWeight: 800, fontSize: 15, cursor: "pointer", marginBottom: 24 }}>
-            ⚡ ANALIZAR ISOMÉTRICO
+            ANALIZAR ISOMETRICO
           </button>
         )}
 
         {loading && (
           <div style={{ textAlign: "center", padding: "40px 0" }}>
             <div style={{ fontSize: 32, marginBottom: 10 }}>⚙️</div>
-            <div style={{ fontWeight: 700, color: "#F97316" }}>Analizando isométrico...</div>
-            <div style={{ color: "#64748B", fontSize: 13, marginTop: 4 }}>Extrayendo datos completos del isométrico</div>
+            <div style={{ fontWeight: 700, color: "#F97316" }}>Analizando...</div>
+            <div style={{ color: "#64748B", fontSize: 13, marginTop: 4 }}>Extrayendo datos del isometrico</div>
           </div>
         )}
 
         {error && (
           <div style={{ background: "#7f1d1d33", border: "1px solid #ef4444", borderRadius: 8, padding: "12px 16px", color: "#fca5a5", marginBottom: 16 }}>
-            ⚠️ {error}
+            Error: {error}
           </div>
         )}
 
@@ -278,11 +264,11 @@ export default function IsoAnalyzer() {
 
             {activeTab === "geometria" && (
               <div style={S.card}>
-                <div style={S.sectionTitle}>📐 1. Datos Geométricos y de Ruteo</div>
+                <div style={S.sectionTitle}>1. Datos Geometricos y de Ruteo</div>
                 <div style={S.infoGrid}>
                   {[
-                    ["Orientación Norte", result.geometria?.orientacionNorte],
-                    ["Elevación BOP", result.geometria?.elevacionBOP],
+                    ["Orientacion Norte", result.geometria?.orientacionNorte],
+                    ["Elevacion BOP", result.geometria?.elevacionBOP],
                     ["Coord. Inicio Norte", result.geometria?.coordenadasInicio?.norte],
                     ["Coord. Inicio Este", result.geometria?.coordenadasInicio?.este],
                     ["Coord. Inicio Elev.", result.geometria?.coordenadasInicio?.elevacion],
@@ -292,16 +278,16 @@ export default function IsoAnalyzer() {
                   ].map(([label, val]) => (
                     <div key={label} style={S.infoBox}>
                       <div style={S.infoLabel}>{label}</div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{str(val)}</div>
                     </div>
                   ))}
                 </div>
                 {result.geometria?.angulos?.length > 0 && (
                   <div style={{ marginTop: 12 }}>
-                    <div style={S.infoLabel}>Ángulos</div>
+                    <div style={S.infoLabel}>Angulos</div>
                     <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 }}>
                       {result.geometria.angulos.map((ang, i) => (
-                        <div key={i} style={{ background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>{ang}</div>
+                        <div key={i} style={{ background: "#0B1120", border: "1px solid #1F2D45", borderRadius: 6, padding: "4px 10px", fontSize: 12, color: "#F97316", fontWeight: 700 }}>{str(ang)}</div>
                       ))}
                     </div>
                   </div>
@@ -312,17 +298,17 @@ export default function IsoAnalyzer() {
             {activeTab === "materiales" && (
               <div>
                 <div style={S.card}>
-                  <div style={S.sectionTitle}>🔵 Tuberías</div>
+                  <div style={S.sectionTitle}>Tuberias</div>
                   <table style={S.table}>
-                    <thead><tr>{["Tramo", "Ø Nominal", "Longitud", "Schedule", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <thead><tr>{["Tramo", "Diametro", "Longitud", "Schedule", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
                       {(result.materiales?.tuberias || []).map((t, i) => (
                         <tr key={i}>
-                          <td style={{ ...S.td, color: "#F97316", fontWeight: 700 }}>{t.tramo}</td>
-                          <td style={S.td}>{t.diametroNominal}</td>
-                          <td style={S.td}>{t.longitud}</td>
-                          <td style={S.td}>{t.schedule}</td>
-                          <td style={S.td}>{t.material}</td>
+                          <td style={{ ...S.td, color: "#F97316", fontWeight: 700 }}>{str(t.tramo)}</td>
+                          <td style={S.td}>{str(t.diametroNominal)}</td>
+                          <td style={S.td}>{str(t.longitud)}</td>
+                          <td style={S.td}>{str(t.schedule)}</td>
+                          <td style={S.td}>{str(t.material)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -330,18 +316,18 @@ export default function IsoAnalyzer() {
                 </div>
 
                 <div style={S.card}>
-                  <div style={S.sectionTitle}>🔩 Accesorios</div>
+                  <div style={S.sectionTitle}>Accesorios</div>
                   <table style={S.table}>
-                    <thead><tr>{["Tipo", "Ø", "Cant.", "Rating", "Extremos", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <thead><tr>{["Tipo", "Diametro", "Cant.", "Rating", "Extremos", "Material"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
                       {(result.materiales?.accesorios || []).map((acc, i) => (
                         <tr key={i}>
-                          <td style={S.td}>{acc.tipo}</td>
-                          <td style={S.td}>{acc.diametro}</td>
-                          <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{acc.cantidad}</td>
-                          <td style={S.td}>{acc.rating || "—"}</td>
-                          <td style={S.td}>{acc.extremos || "—"}</td>
-                          <td style={S.td}>{acc.material || "—"}</td>
+                          <td style={S.td}>{str(acc.tipo)}</td>
+                          <td style={S.td}>{str(acc.diametro)}</td>
+                          <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{str(acc.cantidad)}</td>
+                          <td style={S.td}>{str(acc.rating)}</td>
+                          <td style={S.td}>{str(acc.extremos)}</td>
+                          <td style={S.td}>{str(acc.material)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -350,17 +336,17 @@ export default function IsoAnalyzer() {
 
                 {result.materiales?.bridas?.length > 0 && (
                   <div style={S.card}>
-                    <div style={S.sectionTitle}>🔘 Bridas</div>
+                    <div style={S.sectionTitle}>Bridas</div>
                     <table style={S.table}>
-                      <thead><tr>{["Tipo", "Ø", "Rating", "Cara", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Tipo", "Diametro", "Rating", "Cara", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {result.materiales.bridas.map((bri, i) => (
                           <tr key={i}>
-                            <td style={S.td}>{bri.tipo}</td>
-                            <td style={S.td}>{bri.diametro}</td>
-                            <td style={S.td}>{bri.rating}</td>
-                            <td style={S.td}>{bri.cara || "—"}</td>
-                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{bri.cantidad}</td>
+                            <td style={S.td}>{str(bri.tipo)}</td>
+                            <td style={S.td}>{str(bri.diametro)}</td>
+                            <td style={S.td}>{str(bri.rating)}</td>
+                            <td style={S.td}>{str(bri.cara)}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800, textAlign: "center" }}>{str(bri.cantidad)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -369,18 +355,18 @@ export default function IsoAnalyzer() {
                 )}
 
                 <div style={S.card}>
-                  <div style={S.sectionTitle}>🚦 Válvulas</div>
+                  <div style={S.sectionTitle}>Valvulas</div>
                   <table style={S.table}>
-                    <thead><tr>{["Tipo", "Tag", "Ø", "Rating", "Operación", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                    <thead><tr>{["Tipo", "Tag", "Diametro", "Rating", "Operacion", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                     <tbody>
-                      {(result.materiales?.valvulas || []).map((val, i) => (
+                      {(result.materiales?.valvulas || []).map((valv, i) => (
                         <tr key={i}>
-                          <td style={S.td}>{val.tipo}</td>
-                          <td style={{ ...S.td, color: "#F97316" }}>{val.tag || "—"}</td>
-                          <td style={S.td}>{val.diametro}</td>
-                          <td style={S.td}>{val.rating || "—"}</td>
-                          <td style={S.td}>{val.operacion || "—"}</td>
-                          <td style={{ ...S.td, fontWeight: 800, textAlign: "center" }}>{val.cantidad}</td>
+                          <td style={S.td}>{str(valv.tipo)}</td>
+                          <td style={{ ...S.td, color: "#F97316" }}>{str(valv.tag)}</td>
+                          <td style={S.td}>{str(valv.diametro)}</td>
+                          <td style={S.td}>{str(valv.rating)}</td>
+                          <td style={S.td}>{str(valv.operacion)}</td>
+                          <td style={{ ...S.td, fontWeight: 800, textAlign: "center" }}>{str(valv.cantidad)}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -389,30 +375,30 @@ export default function IsoAnalyzer() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div style={S.card}>
-                    <div style={S.sectionTitle}>🔩 Pernos</div>
+                    <div style={S.sectionTitle}>Pernos</div>
                     <table style={S.table}>
-                      <thead><tr>{["Ø", "Long.", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Diametro", "Longitud", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {(result.materiales?.pernos || []).map((per, i) => (
                           <tr key={i}>
-                            <td style={S.td}>{per.diametro || "—"}</td>
-                            <td style={S.td}>{per.longitud || "—"}</td>
-                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{per.cantidad}</td>
+                            <td style={S.td}>{str(per.diametro)}</td>
+                            <td style={S.td}>{str(per.longitud)}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{str(per.cantidad)}</td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
                   <div style={S.card}>
-                    <div style={S.sectionTitle}>⭕ Empaquetaduras</div>
+                    <div style={S.sectionTitle}>Empaquetaduras</div>
                     <table style={S.table}>
-                      <thead><tr>{["Tipo", "Ø", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Tipo", "Diametro", "Cant."].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {(result.materiales?.empaquetaduras || []).map((emp, i) => (
                           <tr key={i}>
-                            <td style={S.td}>{emp.tipo || "—"}</td>
-                            <td style={S.td}>{emp.diametro || "—"}</td>
-                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{emp.cantidad}</td>
+                            <td style={S.td}>{str(emp.tipo)}</td>
+                            <td style={S.td}>{str(emp.diametro)}</td>
+                            <td style={{ ...S.td, color: "#F97316", fontWeight: 800 }}>{str(emp.cantidad)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -424,36 +410,36 @@ export default function IsoAnalyzer() {
 
             {activeTab === "tecnicos" && (
               <div style={S.card}>
-                <div style={S.sectionTitle}>⚙️ 3. Datos Técnicos y Operativos</div>
+                <div style={S.sectionTitle}>3. Datos Tecnicos y Operativos</div>
                 <div style={S.infoGrid}>
                   {[
-                    ["Número de Línea", result.tecnicos?.lineaNumero],
-                    ["Especificación", result.tecnicos?.especificacion],
+                    ["Numero de Linea", result.tecnicos?.lineaNumero],
+                    ["Especificacion", result.tecnicos?.especificacion],
                     ["Fluido", result.tecnicos?.fluido],
-                    ["Presión de Diseño", result.tecnicos?.presionDiseno],
-                    ["Temperatura de Diseño", result.tecnicos?.temperaturaDiseno],
+                    ["Presion de Diseno", result.tecnicos?.presionDiseno],
+                    ["Temperatura de Diseno", result.tecnicos?.temperaturaDiseno],
                     ["Aislamiento Tipo", result.tecnicos?.aislamiento?.tipo],
                     ["Aislamiento Espesor", result.tecnicos?.aislamiento?.espesor],
                     ["Prueba Tipo", result.tecnicos?.prueba?.tipo],
-                    ["Presión de Prueba", result.tecnicos?.prueba?.presion],
+                    ["Presion de Prueba", result.tecnicos?.prueba?.presion],
                   ].map(([label, val]) => (
                     <div key={label} style={S.infoBox}>
                       <div style={S.infoLabel}>{label}</div>
-                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                      <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{str(val)}</div>
                     </div>
                   ))}
                 </div>
                 {result.tecnicos?.soportes?.length > 0 && (
                   <div style={{ marginTop: 16 }}>
-                    <div style={S.sectionTitle}>🏗️ Soportes</div>
+                    <div style={S.sectionTitle}>Soportes</div>
                     <table style={S.table}>
-                      <thead><tr>{["Tag", "Tipo", "Ubicación"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+                      <thead><tr>{["Tag", "Tipo", "Ubicacion"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
                       <tbody>
                         {result.tecnicos.soportes.map((sop, i) => (
                           <tr key={i}>
-                            <td style={{ ...S.td, color: "#F97316" }}>{sop.tag || "—"}</td>
-                            <td style={S.td}>{sop.tipo}</td>
-                            <td style={S.td}>{sop.ubicacion || "—"}</td>
+                            <td style={{ ...S.td, color: "#F97316" }}>{str(sop.tag)}</td>
+                            <td style={S.td}>{str(sop.tipo)}</td>
+                            <td style={S.td}>{str(sop.ubicacion)}</td>
                           </tr>
                         ))}
                       </tbody>
@@ -466,16 +452,16 @@ export default function IsoAnalyzer() {
             {activeTab === "construccion" && (
               <div>
                 <div style={S.card}>
-                  <div style={S.sectionTitle}>📋 4. Datos de Construcción y Control</div>
+                  <div style={S.sectionTitle}>4. Datos de Construccion y Control</div>
                   <div style={S.infoGrid}>
                     {[
-                      ["Revisión del Plano", result.construccion?.revisionPlano],
+                      ["Revision del Plano", result.construccion?.revisionPlano],
                       ["NDT Tipo", result.construccion?.ndt?.tipo],
                       ["NDT Porcentaje", result.construccion?.ndt?.porcentaje],
                     ].map(([label, val]) => (
                       <div key={label} style={S.infoBox}>
                         <div style={S.infoLabel}>{label}</div>
-                        <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{val || "N/D"}</div>
+                        <div style={{ fontWeight: 700, fontSize: 13, color: val ? "#F1F5F9" : "#64748B" }}>{str(val)}</div>
                       </div>
                     ))}
                   </div>
@@ -483,7 +469,7 @@ export default function IsoAnalyzer() {
 
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
                   <div style={S.card}>
-                    <div style={S.sectionTitle}>🔥 Soldaduras de Taller</div>
+                    <div style={S.sectionTitle}>Soldaduras de Taller</div>
                     {[
                       ["Butt Weld (BW)", result.construccion?.soldaduras?.taller?.bw || 0, "#F97316"],
                       ["Socket Weld (SW)", result.construccion?.soldaduras?.taller?.sw || 0, "#3B82F6"],
@@ -491,12 +477,12 @@ export default function IsoAnalyzer() {
                     ].map(([label, val, color]) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1F2D4522" }}>
                         <span style={{ color: "#94A3B8", fontSize: 12 }}>{label}</span>
-                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{val}</span>
+                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{str(val)}</span>
                       </div>
                     ))}
                   </div>
                   <div style={S.card}>
-                    <div style={S.sectionTitle}>🏗️ Soldaduras de Campo</div>
+                    <div style={S.sectionTitle}>Soldaduras de Campo</div>
                     {[
                       ["Butt Weld (BW)", result.construccion?.soldaduras?.campo?.bw || 0, "#F97316"],
                       ["Socket Weld (SW)", result.construccion?.soldaduras?.campo?.sw || 0, "#3B82F6"],
@@ -504,7 +490,7 @@ export default function IsoAnalyzer() {
                     ].map(([label, val, color]) => (
                       <div key={label} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: "1px solid #1F2D4522" }}>
                         <span style={{ color: "#94A3B8", fontSize: 12 }}>{label}</span>
-                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{val}</span>
+                        <span style={{ color, fontWeight: 900, fontSize: 18 }}>{str(val)}</span>
                       </div>
                     ))}
                   </div>
@@ -514,7 +500,7 @@ export default function IsoAnalyzer() {
                   <div style={{ marginTop: 12 }}>
                     {result.construccion.alertas.map((alerta, i) => (
                       <div key={i} style={{ background: "#78350f22", border: "1px solid #f59e0b55", borderRadius: 6, padding: "8px 12px", fontSize: 12, color: "#fcd34d", marginBottom: 6 }}>
-                        ⚠️ {alerta}
+                        {str(alerta)}
                       </div>
                     ))}
                   </div>
@@ -524,7 +510,7 @@ export default function IsoAnalyzer() {
 
             <div style={{ marginTop: 16 }}>
               <button onClick={exportCSV} style={{ padding: "10px 20px", background: "transparent", color: "#F97316", border: "1px solid #F97316", borderRadius: 7, fontWeight: 700, fontSize: 13, cursor: "pointer" }}>
-                ⬇ Exportar CSV completo
+                Exportar CSV completo
               </button>
             </div>
           </div>
